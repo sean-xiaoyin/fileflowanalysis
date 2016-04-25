@@ -40,8 +40,7 @@ public class AnalysisTest {
 	@Test
 	public void testTraversal() throws Exception {
 		FlowPoint cfg = FileFlowHelper.generateControlFlowGraphFromScript(new File(TEST_SCRIPT));
-		Analyzer<DummyAnalysisDomain, DummyAnalysis> analyzer = new Analyzer<>(DummyAnalysisDomain.class,
-				DummyAnalysis.class);
+		Analyzer analyzer = new Analyzer();
 		analyzer.analyze(cfg);
 	}
 

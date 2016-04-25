@@ -7,23 +7,26 @@ import edu.utsa.fileflow.cfg.FlowPointContext;
 import edu.utsa.fileflow.cfg.FlowPointContextType;
 import edu.utsa.fileflow.cfg.FlowPointEdge;
 
-public class Analyzer<D extends AnalysisDomain, A extends Analysis<D>> {
+public class Analyzer {
 
-	D domain;
-	A analysis;
+	AnalysisDomain domain;
+	AnalyzerAnalysis analysis;
 
-	public Analyzer(Class<D> d, Class<A> a) {
-		try {
-			// TODO: create factory interface for these
-			domain = d.newInstance();
-			analysis = a.newInstance();
-		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public Analyzer() throws AnalysisException {
+		domain = new AnalysisDomain();
+		analysis = new AnalyzerAnalysis();
+
+		// TODO: validate domain
+		// if (domain.bottom() == null)
+		// throw new AnalysisException(domain.getClass().getSimpleName() +
+		// "::bottom() cannot be null.");
+		// if (domain.top() == null)
+		// throw new AnalysisException(domain.getClass().getSimpleName() +
+		// "::top() cannot be null.");
+	}
+
+	public void addPlugin(AnalysisSubDomain subdomain, AbstractAnalysis<?> analysis) {
+		domain.subdomains.put(subdomain, analysis);
 	}
 
 	public void analyze(FlowPoint cfg) {
@@ -43,9 +46,8 @@ public class Analyzer<D extends AnalysisDomain, A extends Analysis<D>> {
 				// for each outgoing edge, compute y (new domain)
 				// then check if y is different from the old domain
 				// if so, update domain and target to workset
-				@SuppressWarnings("unchecked")
-				AnalysisDomain y = updateAnalysis(child, (D) flowpoint.domain);
-				if (y.compareTo(child.domain) != 0) {
+				AnalysisDomain y = updateAnalysis(child, flowpoint.domain);
+				if (!y.equals(child.domain)) {
 					child.domain = y;
 					workset.add(child);
 				}
@@ -54,14 +56,14 @@ public class Analyzer<D extends AnalysisDomain, A extends Analysis<D>> {
 		}
 	}
 
-	private AnalysisDomain updateAnalysis(FlowPoint target, D inputDomain) {
+	private AnalysisDomain updateAnalysis(FlowPoint target, AnalysisDomain inputDomain) {
 		AnalysisDomain result = null;
 		FlowPointContext fpctx = target.getContext();
 		FlowPointContextType type = fpctx.getType();
 
 		// TODO: find an alternative to this
 		if (target.domain == null) {
-			target.domain = inputDomain.bottom();
+			target.domain = inputDomain.setBottom();
 		}
 
 		analysis.onBefore(inputDomain, fpctx);
